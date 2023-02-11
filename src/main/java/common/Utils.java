@@ -9,7 +9,9 @@ public interface Utils {
 
     int CUSTOMER_DB_PORT = 5003;
 
-    int SERVER_SIDE_SELLER_INTF_PORT = 5004;
+    int PRODUCT_DB_PORT = 5004;
+
+    int SERVER_SIDE_SELLER_INTF_PORT = 5005;
 
     static String fetchUserID(String username, String password) {
         try {

@@ -13,6 +13,7 @@ public abstract class DBServer extends Server{
     public DBServer(int port, String url) throws IOException {
         super(port);
         this.url = url;
+        // TODO: Add create DB if not exists
     }
 
     @Override
