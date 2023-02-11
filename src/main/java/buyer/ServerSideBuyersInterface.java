@@ -2,6 +2,7 @@ package buyer;
 
 import common.ClientDelegate;
 import common.Server;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,6 +60,34 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
     }
 
     @Override
+    public String addItemToShoppingCart(int userID, String itemID, int quantity) {
+        String response = "{}";
+        int currentCartValueForItem = 0;
+        try {
+            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
+            String request = "SELECT quantity from ShoppingCart where \"userID\" = "+userID+" and \"itemID\" = \""+itemID+"\"";
+            String adjResponse = clientDelegate.sendRequest(request);
+
+            String addToCartRequest = "";
+            JSONArray jsonArray = new JSONArray(adjResponse);
+            if(!jsonArray.isEmpty()){
+                JSONObject jsonObject = jsonArray.getJSONObject(0);
+                currentCartValueForItem = Integer.parseInt(jsonObject.getString("quantity"));
+                addToCartRequest = "UPDATE ShoppingCart SET \"quantity\" = "+(currentCartValueForItem+quantity) + " WHERE \"userID\" = "+userID+" and \"itemID\" = \""+itemID+"\"";
+            } else {
+                addToCartRequest = "INSERT INTO ShoppingCart VALUES("+userID+", \""+itemID+"\", "+quantity+")";
+            }
+
+            clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
+            clientDelegate.sendRequest(addToCartRequest);
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+
+        return response;
+    }
+
+    @Override
     protected String processClientRequest(String request) {
         JSONObject jsonObject = new JSONObject(request);
         String response = "{} ";
@@ -75,7 +104,13 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
                 String username = arguments.getString("username");
                 String password = arguments.getString("password");
                 response = login(username, password);
-            } else if(invokedFunction.equalsIgnoreCase("getSellerRating")){
+            } else if(invokedFunction.equalsIgnoreCase("addItemToShoppingCart")){
+                JSONObject arguments = jsonObject.getJSONObject("arguments");
+                int userID = arguments.getInt("userID");
+                String itemID = arguments.getString("itemID");
+                int quantity = arguments.getInt("quantity");
+                response = addItemToShoppingCart(userID, itemID, quantity);
+            }else if(invokedFunction.equalsIgnoreCase("getSellerRating")){
                 JSONObject arguments = jsonObject.getJSONObject("arguments");
                 int sellerID = Integer.parseInt(arguments.getString("sellerID"));
                 response = getSellerRating(sellerID);
@@ -95,6 +130,7 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
                     super.run();
                     try {
                         ServerSideBuyersInterface serverSideBuyersInterface = new ServerSideBuyersInterface(SERVER_SIDE_SELLER_INTF_PORT+200+ finalI);
+
                         JSONObject createAccountRequestJSON = new JSONObject();
                         createAccountRequestJSON.put("function", "createAccount");
                         JSONObject argumentsJSON = new JSONObject();
@@ -103,12 +139,24 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
                         argumentsJSON.put("buyerName", "buyerName");
                         createAccountRequestJSON.put("arguments", argumentsJSON);
                         String response = serverSideBuyersInterface.processClientRequest(createAccountRequestJSON.toString());
+                        JSONObject userIDJSON = new JSONObject(response);
+
                         JSONObject sellerRatingJSON = new JSONObject();
                         sellerRatingJSON.put("sellerID",""+(finalI+1));
                         JSONObject getSellerRatingJSON = new JSONObject();
                         getSellerRatingJSON.put("function", "getSellerRating");
                         getSellerRatingJSON.put("arguments",sellerRatingJSON);
                         System.out.println(serverSideBuyersInterface.processClientRequest(getSellerRatingJSON.toString()));
+
+                        JSONObject addItemToShoppingCartJSON = new JSONObject();
+                        addItemToShoppingCartJSON.put("function", "addItemToShoppingCart");
+                        argumentsJSON = new JSONObject();
+                        int userID = Integer.parseInt(userIDJSON.getString("userID"));
+                        argumentsJSON.put("userID", userID);
+                        argumentsJSON.put("itemID", "itemID"+userID);
+                        argumentsJSON.put("quantity",5);
+                        addItemToShoppingCartJSON.put("arguments",argumentsJSON);
+                        serverSideBuyersInterface.processClientRequest(addItemToShoppingCartJSON.toString());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
