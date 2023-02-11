@@ -6,8 +6,10 @@ public interface BuyersInterface {
     String logout(int buyerID);
     String getSellerRating(int sellerID);
     String addItemToShoppingCart(int userID, String itemID, int quantity);
+    String removeItemFromShoppingCart(int userID, String itemID, int quantity);
+
+    String clearShoppingCart(int userID);
     /*
-    * Remove item from the shopping cart: provide item id and quantity
     * Clear the shopping cart
     * Display shopping cart*/
 }
