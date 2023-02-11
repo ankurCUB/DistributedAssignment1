@@ -53,3 +53,4 @@ tags
 [._]*.un~
 /src/main/java/customerDB/CustomerDB.db
 /src/main/java/customerDB/CustomerDB.db-journal
+/src/main/java/productDB/ProductDB.db
