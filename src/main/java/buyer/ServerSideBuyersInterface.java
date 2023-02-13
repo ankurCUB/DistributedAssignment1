@@ -7,6 +7,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import static common.Utils.*;
 
@@ -134,6 +136,94 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
         }
         return response;
     }
+
+    @Override
+    public String displayShoppingCart(int userID) {
+        try {
+            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
+            String request = "SELECT itemID, quantity from ShoppingCart where \"userID\" = " + userID;
+            String adjResponse = clientDelegate.sendRequest(request);
+
+            JSONArray shoppingCartResponseArray = new JSONArray(adjResponse);
+
+            if(shoppingCartResponseArray.isEmpty()){
+                return "{}";
+            }
+
+            HashMap<Integer,Integer> shoppingCartMap = new LinkedHashMap<>();
+            for(int i=0; i<shoppingCartResponseArray.length(); i++){
+                JSONObject jsonObject = shoppingCartResponseArray.getJSONObject(i);
+                int itemID = jsonObject.getInt("itemID");
+                shoppingCartMap.put(itemID, jsonObject.getInt("quantity"));
+            }
+
+            return getProductDetails(shoppingCartMap).toString();
+
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return "{}";
+    }
+
+    @Override
+    public String makePurchase() {
+        return null;
+    }
+
+    @Override
+    public String getBuyerPurchaseHistory(int userID) {
+        try {
+            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
+            String request = "SELECT sellerID, quantity from PurchaseHistory where \"userID\" = " + userID;
+            String adjResponse = clientDelegate.sendRequest(request);
+
+            JSONArray purchaseHistoryResponseArray = new JSONArray(adjResponse);
+
+            if(purchaseHistoryResponseArray.isEmpty()){
+                return "{}";
+            }
+
+            HashMap<Integer,Integer> purchaseHistoryMap = new LinkedHashMap<>();
+            for(int i=0; i<purchaseHistoryResponseArray.length(); i++){
+                JSONObject jsonObject = purchaseHistoryResponseArray.getJSONObject(i);
+                int itemID = jsonObject.getInt("itemID");
+                purchaseHistoryMap.put(itemID, jsonObject.getInt("quantity"));
+            }
+
+            return getProductDetails(purchaseHistoryMap).toString();
+
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return "{}";
+    }
+
+    @Override
+    public String provideFeedback(int purchaseID, int feedback) {
+        try {
+            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
+            String request = "SELECT sellerID, feedback from PurchaseHistory where \"purchaseID\" = " + purchaseID;
+            String adjResponse = clientDelegate.sendRequest(request);
+
+            JSONArray purchaseHistoryResponseArray = new JSONArray(adjResponse);
+
+            if(purchaseHistoryResponseArray.isEmpty()){
+                return "{}";
+            }
+
+            JSONObject purchaseHistoryObject = purchaseHistoryResponseArray.getJSONObject(0);
+            if(Integer.parseInt(purchaseHistoryObject.getString("feedback"))==0){
+                clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
+                request = "UPDATE PurchaseHistory SET \"feedback\" = " + feedback + "WHERE \"purchaseID\" = " + purchaseID;
+                clientDelegate.sendRequest(request);
+            }
+
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        return "{}";
+    }
+
 
     @Override
     protected String processClientRequest(String request) {

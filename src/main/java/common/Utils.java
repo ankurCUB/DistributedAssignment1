@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public interface Utils {
 
@@ -50,6 +51,40 @@ public interface Utils {
             return responseJSON.toString();
         } catch (IOException e) {
             return "{}";
+        }
+    }
+
+    static JSONArray getProductDetails(HashMap<Integer, Integer> itemMap) {
+
+        String shoppingCartList = "( ";
+        for(int itemID : itemMap.keySet()){
+            shoppingCartList = shoppingCartList + itemID + ",";
+        }
+        shoppingCartList = shoppingCartList.substring(0, shoppingCartList.length()-1) + ")";
+
+        try {
+            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            String request = "SELECT * FROM Products WHERE itemID IN "+ shoppingCartList;
+            String response = clientDelegate.sendRequest(request);
+
+            JSONArray productResponseArray = new JSONArray(response);
+            if(productResponseArray.isEmpty()){
+                return new JSONArray();
+            }
+
+            JSONArray modifiedProductResponseArray = new JSONArray();
+
+            for(int i=0; i<productResponseArray.length(); i++) {
+                JSONObject jsonObject = productResponseArray.getJSONObject(i);
+                int itemID = jsonObject.getInt("itemID");
+                jsonObject.remove("quantity");
+                jsonObject.put("quantity", itemMap.get(itemID));
+                modifiedProductResponseArray.put(jsonObject);
+            }
+            return modifiedProductResponseArray;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new JSONArray();
         }
     }
 }

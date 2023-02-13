@@ -7,9 +7,11 @@ public interface BuyersInterface {
     String getSellerRating(int sellerID);
     String addItemToShoppingCart(int userID, String itemID, int quantity);
     String removeItemFromShoppingCart(int userID, String itemID, int quantity);
-
     String clearShoppingCart(int userID);
+    String displayShoppingCart(int userID);
+    String makePurchase();
+    String getBuyerPurchaseHistory(int userID);
+    String provideFeedback(int purchaseID, int feedback);
     /*
-    * Clear the shopping cart
-    * Display shopping cart*/
+    * Search items for sale: provide an item category and up to five keywords*/
 }
