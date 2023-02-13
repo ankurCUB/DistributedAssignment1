@@ -1,7 +1,6 @@
 package seller;
 
 import common.ClientDelegate;
-import common.ItemID;
 import common.SaleItem;
 import common.Server;
 import org.json.JSONArray;
@@ -83,26 +82,77 @@ public class ServerSideSellersInterface extends Server implements SellersInterfa
 
     @Override
     public String putItemForSale(SaleItem item) {
-
-        return null;
+        ClientDelegate clientDelegate = null;
+        try {
+            clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            String request = "INSERT INTO Products(\"itemName\",\"category\",\"keyWords\",\"isNew\",\"itemPrice\",\"sellerID\",\"quantity\") VALUES (\"" +
+                    item.itemName + "\", "+item.category+", \""+item.keywords+"\", "+item.isNew+", "+item.itemPrice+", "+item.sellerID+", "+item.quantity+")";
+            clientDelegate.sendRequest(request);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "{}";
     }
 
     @Override
-    public String changeSalePriceOfItem(ItemID itemID, float newPrice) {
-
-        return null;
+    public String changeSalePriceOfItem(int sellerID, int itemID, float newPrice) {
+        ClientDelegate clientDelegate = null;
+        try {
+            clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            String request = "UPDATE Products SET \"itemPrice\" ="+newPrice+" WHERE \"itemID\" = "+itemID+" AND \"sellerID\" = "+sellerID;
+            clientDelegate.sendRequest(request);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "{}";
     }
 
     @Override
-    public String removeItemFromSale() {
+    public String removeItemFromSale(int sellerID, int itemID, int quantity) {
 
-        return null;
+        ClientDelegate clientDelegate = null;
+        try {
+            clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            String request = "SELECT quantity FROM Products WHERE \"itemID\" = "+itemID+" AND \"sellerID\" = "+sellerID;
+            String adjResponse = clientDelegate.sendRequest(request);
+            JSONArray responseArray = new JSONArray(adjResponse);
+
+            if(responseArray.length()==0){
+                return "{}";
+            }
+
+            JSONObject jsonObject = responseArray.getJSONObject(0);
+            int currentSaleQuantityForItem = Integer.parseInt(jsonObject.getString("quantity"));
+
+            String removeFromSaleRequest = "";
+            if(currentSaleQuantityForItem<quantity){
+                return "{}";
+            } else if(currentSaleQuantityForItem==quantity){
+                removeFromSaleRequest = "DELETE FROM Products WHERE \"sellerID\" = "+sellerID+" and \"itemID\" = \""+itemID+"\"";
+            } else{
+                removeFromSaleRequest = "UPDATE ShoppingCart SET \"quantity\" = "+(currentSaleQuantityForItem-quantity) + " WHERE \"sellerID\" = "+sellerID+" and \"itemID\" = \""+itemID+"\"";
+            }
+
+            clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            clientDelegate.sendRequest(removeFromSaleRequest);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "{}";
     }
 
     @Override
-    public String displayItemsOnSale() {
-
-        return null;
+    public String displayItemsOnSale(int sellerID) {
+        ClientDelegate clientDelegate = null;
+        try {
+            clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            String request = "SELECT * FROM Products WHERE \"sellerID\" = "+sellerID;
+            return clientDelegate.sendRequest(request);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "{}";
+        }
     }
 
     @Override
@@ -126,6 +176,26 @@ public class ServerSideSellersInterface extends Server implements SellersInterfa
                 JSONObject arguments = jsonObject.getJSONObject("arguments");
                 int userID = Integer.parseInt(arguments.getString("sellerID"));
                 response = getSellerRating(userID);
+            } else if(invokedFunction.equalsIgnoreCase("putItemForSale")){
+                JSONObject arguments = jsonObject.getJSONObject("arguments");
+                String itemName = arguments.getString("itemName");
+                int category = arguments.getInt("category");
+                String keywords = arguments.getString("keywords");
+                int isNew = arguments.getInt("isNew");
+                float itemPrice = arguments.getFloat("itemPrice");
+                int sellerID = arguments.getInt("sellerID");
+                int quantity = arguments.getInt("quantity");
+                response = putItemForSale(new SaleItem(itemName, category, keywords, isNew, itemPrice, sellerID, quantity ));
+            } else if(invokedFunction.equalsIgnoreCase("removeItemFromSale")){
+                JSONObject arguments = jsonObject.getJSONObject("arguments");
+                int itemID = arguments.getInt("itemID");
+                int sellerID = arguments.getInt("sellerID");
+                int quantity = arguments.getInt("quantity");
+                response = removeItemFromSale(sellerID, itemID, quantity);
+            } else if(invokedFunction.equalsIgnoreCase("displayItemsOnSale")){
+                JSONObject arguments = jsonObject.getJSONObject("arguments");
+                int sellerID = arguments.getInt("sellerID");
+                response = displayItemsOnSale(sellerID);
             }
         } catch (JSONException exception){
             response = "{}";
@@ -142,21 +212,69 @@ public class ServerSideSellersInterface extends Server implements SellersInterfa
                     super.run();
                     try {
                         ServerSideSellersInterface serverSideSellersInterface = new ServerSideSellersInterface(SERVER_SIDE_SELLER_INTF_PORT+100+ finalI);
-                        JSONObject createAccountRequestJSON = new JSONObject();
-                        createAccountRequestJSON.put("function", "createAccount");
+
                         JSONObject argumentsJSON = new JSONObject();
+                        String response = "";
+                        JSONObject userIDJSON;
+                        int sellerID ;
+
+//                        JSONObject createAccountRequestJSON = new JSONObject();
+//                        createAccountRequestJSON.put("function", "createAccount");
+//                        argumentsJSON.put("username", "Seller" + finalI);
+//                        argumentsJSON.put("password", "password");
+//                        argumentsJSON.put("sellerName", "sellerName");
+//                        createAccountRequestJSON.put("arguments", argumentsJSON);
+//                        response = serverSideSellersInterface.processClientRequest(createAccountRequestJSON.toString());
+//                        userIDJSON = new JSONObject(response);
+//                        int sellerID = Integer.parseInt(userIDJSON.getString("userID"));
+
+                        JSONObject loginRequestJSON = new JSONObject();
+                        loginRequestJSON.put("function", "login");
+                        argumentsJSON = new JSONObject();
                         argumentsJSON.put("username", "Seller" + finalI);
                         argumentsJSON.put("password", "password");
-                        argumentsJSON.put("sellerName", "sellerName");
-                        createAccountRequestJSON.put("arguments", argumentsJSON);
-                        String response = serverSideSellersInterface.processClientRequest(createAccountRequestJSON.toString());
-                        JSONObject userIDJSON = new JSONObject(response);
-                        JSONObject sellerRatingJSON = new JSONObject();
-                        sellerRatingJSON.put("sellerID",userIDJSON.getString("userID"));
-                        JSONObject getSellerRatingJSON = new JSONObject();
-                        getSellerRatingJSON.put("function", "getSellerRating");
-                        getSellerRatingJSON.put("arguments",sellerRatingJSON);
-                        System.out.println(serverSideSellersInterface.processClientRequest(getSellerRatingJSON.toString()));
+                        loginRequestJSON.put("arguments", argumentsJSON);
+                        response = serverSideSellersInterface.processClientRequest(loginRequestJSON.toString());
+                        userIDJSON = new JSONObject(response);
+                        sellerID = Integer.parseInt(userIDJSON.getString("userID"));
+
+
+//                        JSONObject sellerRatingJSON = new JSONObject();
+//                        sellerRatingJSON.put("sellerID",userIDJSON.getString("userID"));
+//                        JSONObject getSellerRatingJSON = new JSONObject();
+//                        getSellerRatingJSON.put("function", "getSellerRating");
+//                        getSellerRatingJSON.put("arguments",sellerRatingJSON);
+//                        System.out.println(serverSideSellersInterface.processClientRequest(getSellerRatingJSON.toString()));
+
+                        JSONObject putItemForSaleRequestJSON = new JSONObject();
+                        putItemForSaleRequestJSON.put("function", "putItemForSale");
+                        argumentsJSON.put("itemName","itemName");
+                        argumentsJSON.put("category",0);
+                        argumentsJSON.put("itemID",finalI%10);
+                        argumentsJSON.put("keywords","kw1, kw2, kw3");
+                        argumentsJSON.put("isNew",1);
+                        argumentsJSON.put("itemPrice",9.5);
+                        argumentsJSON.put("sellerID",sellerID);
+                        argumentsJSON.put("quantity", finalI%20);
+                        putItemForSaleRequestJSON.put("arguments",argumentsJSON);
+                        serverSideSellersInterface.processClientRequest(putItemForSaleRequestJSON.toString());
+
+                        JSONObject removeItemFromSaleRequestJSON = new JSONObject();
+                        removeItemFromSaleRequestJSON.put("function", "removeItemFromSale");
+                        argumentsJSON.put("itemID",finalI%10);
+                        argumentsJSON.put("sellerID",sellerID);
+                        argumentsJSON.put("quantity", finalI%20 - 2);
+                        removeItemFromSaleRequestJSON.put("arguments",argumentsJSON);
+                        serverSideSellersInterface.processClientRequest(removeItemFromSaleRequestJSON.toString());
+
+                        JSONObject displayItemsOnSaleRequestJSON = new JSONObject();
+                        displayItemsOnSaleRequestJSON.put("function", "displayItemsOnSale");
+                        argumentsJSON.put("sellerID",sellerID);
+                        displayItemsOnSaleRequestJSON.put("arguments",argumentsJSON);
+                        System.out.println(serverSideSellersInterface.processClientRequest(displayItemsOnSaleRequestJSON.toString()));
+
+
+
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
