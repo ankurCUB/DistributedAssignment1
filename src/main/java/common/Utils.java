@@ -14,6 +14,8 @@ public interface Utils {
 
     int SERVER_SIDE_SELLER_INTF_PORT = 5005;
 
+    int SERVER_SIDE_BUYER_INTF_PORT = 5006;
+
     static String fetchUserID(String username, String password) {
         try {
             ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT) ;

@@ -1,15 +1,17 @@
 package seller;
 
-import common.ClientDelegate;
+import common.Client;
 import common.SaleItem;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
+import static common.Utils.SERVER_SIDE_SELLER_INTF_PORT;
 
-import static common.Utils.CUSTOMER_DB_PORT;
+public class ClientSideSellersInterface extends Client implements SellersInterface {
 
-public class ClientSideSellersInterface implements SellersInterface {
+    public ClientSideSellersInterface(){
+        address = "127.0.0.1";
+        port = SERVER_SIDE_SELLER_INTF_PORT;
+    }
     @Override
     public String createAccount(String username, String password, String sellerName) {
         JSONObject createAccountRequestJSON = new JSONObject();
@@ -66,7 +68,14 @@ public class ClientSideSellersInterface implements SellersInterface {
 
     @Override
     public String changeSalePriceOfItem(int sellerID, int itemID, float newPrice) {
-        return null;
+        JSONObject argumentsJSON = new JSONObject();
+        JSONObject changeSalePriceOfItemJSON = new JSONObject();
+        changeSalePriceOfItemJSON.put("function", "changeSalePriceOfItem");
+        argumentsJSON.put("itemID",itemID);
+        argumentsJSON.put("sellerID",sellerID);
+        argumentsJSON.put("newPrice", newPrice);
+        changeSalePriceOfItemJSON.put("arguments",argumentsJSON);
+        return sendRequest(changeSalePriceOfItemJSON.toString());
     }
 
     @Override
@@ -91,15 +100,5 @@ public class ClientSideSellersInterface implements SellersInterface {
         return sendRequest(displayItemsOnSaleRequestJSON.toString());
     }
 
-    private String sendRequest(String request) {
-        try {
-            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
-            String response = clientDelegate.sendRequest(request);
-            JSONArray jsonArray = new JSONArray(response);
-            return jsonArray.toString();
-        } catch (IOException exception) {
-            exception.printStackTrace();
-            return "{}";
-        }
-    }
+
 }

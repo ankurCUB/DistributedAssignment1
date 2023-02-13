@@ -32,6 +32,7 @@ public abstract class DBServer extends Server{
                 }
                 response.put(recordJSON);
             }
+            connection.close();
             return response.toString();
         } catch (SQLException e) {
             return e.getMessage();

@@ -9,7 +9,7 @@ public abstract class Server {
 
     public Server(int port) throws IOException {
         try {
-            serverSocket = new ServerSocket(port,200);
+            serverSocket = new ServerSocket(port,200000);
         } catch (IOException e) {
             throw new IOException(e);
         }
