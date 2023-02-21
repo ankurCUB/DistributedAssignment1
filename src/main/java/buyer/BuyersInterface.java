@@ -1,5 +1,7 @@
 package buyer;
 
+import java.util.List;
+
 public interface BuyersInterface {
     String createAccount(String username, String password, String buyerName);
     String login(String username, String password);
@@ -12,6 +14,7 @@ public interface BuyersInterface {
     String makePurchase();
     String getBuyerPurchaseHistory(int buyerID);
     String provideFeedback(int purchaseID, int feedback);
+    String searchItemsForSale(int category, String keywords);
     /*
     * Search items for sale: provide an item category and up to five keywords*/
 }

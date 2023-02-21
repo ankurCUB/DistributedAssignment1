@@ -1,0 +1,13 @@
+Single server, client
+
+average = 736.25 ms
+
+10 server, client
+
+average = 67137 ms
+
+The difference in these times can be attributed to queing on the server for requests.
+
+100 server, client
+
+The server crashes multiple times due to database access errors to measure the time

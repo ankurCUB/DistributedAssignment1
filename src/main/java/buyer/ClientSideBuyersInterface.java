@@ -119,4 +119,15 @@ public class ClientSideBuyersInterface extends Client implements BuyersInterface
         provideFeedbackJSON.put("arguments", argumentsJSON);
         return sendRequest(provideFeedbackJSON.toString());
     }
+
+    @Override
+    public String searchItemsForSale(int category, String keywords) {
+        JSONObject argumentsJSON = new JSONObject();
+        JSONObject searchItemsForSaleJSON = new JSONObject();
+        searchItemsForSaleJSON.put("function", "searchItemsForSale");
+        argumentsJSON.put("category", category);
+        argumentsJSON.put("keywords", keywords);
+        searchItemsForSaleJSON.put("arguments", argumentsJSON);
+        return sendRequest(searchItemsForSaleJSON.toString());
+    }
 }

@@ -228,6 +228,29 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
         return "{}";
     }
 
+    @Override
+    public String searchItemsForSale(int category, String keywords) {
+        try {
+            String[] keywordsList = keywords.split(":");
+            StringBuilder builder = new StringBuilder();
+            builder.append("SELECT * FROM Products where \"category\" = ").append(category).append(" AND (");
+            for(String keyword : keywordsList){
+                builder.append( "\" keywords\" LIKE \"%").append(keyword).append("%\"");
+                builder.append(" OR ");
+            }
+            builder.deleteCharAt(builder.length()-1);
+            builder.deleteCharAt(builder.length()-1);
+            builder.deleteCharAt(builder.length()-1);
+            builder.append(")");
+            String request = builder.toString();
+            ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", PRODUCT_DB_PORT);
+            return clientDelegate.sendRequest(request);
+        } catch (IOException exception){
+            exception.printStackTrace();
+            return "{}";
+        }
+    }
+
     private void updateSellerRating(int sellerID, int feedback) {
         try {
             ClientDelegate clientDelegate = new ClientDelegate("127.0.0.1", CUSTOMER_DB_PORT);
@@ -292,15 +315,21 @@ public class ServerSideBuyersInterface extends Server implements BuyersInterface
             } else if (invokedFunction.equalsIgnoreCase("displayShoppingCart")) {
                 JSONObject arguments = jsonObject.getJSONObject("arguments");
                 int buyerID = Integer.parseInt(arguments.getString("buyerID"));
-                response = getSellerRating(buyerID);
+                response = displayShoppingCart(buyerID);
             } else if (invokedFunction.equalsIgnoreCase("getBuyerPurchaseHistory")) {
                 JSONObject arguments = jsonObject.getJSONObject("arguments");
                 int buyerID = Integer.parseInt(arguments.getString("buyerID"));
-                response = getSellerRating(buyerID);
+                response = getBuyerPurchaseHistory(buyerID);
             } else if (invokedFunction.equalsIgnoreCase("provideFeedback")) {
                 JSONObject arguments = jsonObject.getJSONObject("arguments");
-                int buyerID = Integer.parseInt(arguments.getString("buyerID"));
-                response = getSellerRating(buyerID);
+                int purchaseID = Integer.parseInt(arguments.getString("purchaseID"));
+                int feedback = Integer.parseInt(arguments.getString("feedback"));
+                response = provideFeedback(purchaseID, feedback);
+            } else if (invokedFunction.equalsIgnoreCase("searchItemsForSale")) {
+                JSONObject arguments = jsonObject.getJSONObject("arguments");
+                int category = Integer.parseInt(arguments.getString("purchaseID"));
+                String keywords = arguments.getString("keywords");
+                response = searchItemsForSale(category, keywords);
             }
         } catch (JSONException exception) {
             response = "{}";
